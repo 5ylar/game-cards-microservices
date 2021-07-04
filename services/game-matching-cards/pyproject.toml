@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "game-matching-cards"
+version = "0.1.0"
+description = ""
+authors = ["5ylar <forzepmono@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "^0.65.3"
+uvicorn = "^0.14.0"
+redis = "^3.5.3"
+pika = "^1.2.0"
+
+[tool.poetry.dev-dependencies]
+autopep8 = "^1.5.7"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
