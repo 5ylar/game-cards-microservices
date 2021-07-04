@@ -106,7 +106,7 @@ export default function GameMatchingCards(props: IProps) {
         <div className="container mx-auto my-10" >
             <h2 className="text-2xl font-black text-center mb-6">Click times: {clickedTimes}</h2>
             
-            // cards wrapper
+            {/* cards wrapper */}
             <div className="grid grid-cols-3 gap-3 p-1 md:grid-cols-4 md:gap-4md:p-2 md:w-9/12 mx-auto">
                 {
                     [...new Array(12)].map((_, i) => (
@@ -122,11 +122,11 @@ export default function GameMatchingCards(props: IProps) {
             </div>
             <br/>
 
-            // best score
+            {/* best score */}
             <p className="text-center">My best: {props.myMinClickTimes || 0}</p>
             <p className="text-center">Global best: {props.globalMinClickTimes || 0}</p>
 
-            // action buttons
+            {/* action buttons */}
             <div className="grid grid-cols-2 gap-2 p-4 mt-4 max-w-screen-sm	mx-auto w-full">
                 <button onClick={props.onCreateNewMatch} disabled={clickedTimes == 0} className="p-4 bg-purple-200 rounded block">New game</button>
                 <button onClick={props.onBack} className="p-4 bg-gray-200 rounded block">Back</button>

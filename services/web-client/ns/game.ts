@@ -1,23 +1,23 @@
+export const something = ""
+// export const getGameList = async (): Promise<IGame[]> => {
 
-export const getGameList = async (): Promise<IGame[]> => {
+//     return []
+// }
 
-    return []
-}
+// export const getMyGameMatchSession = async (): Promise<IGameMatchSession> => {
+//     return {
+//         matchId: 2,
+//         gameId: "",
+//     }
+// }
 
-export const getMyGameMatchSession = async (): Promise<IGameMatchSession> => {
-    return {
-        matchId: 2,
-        gameId: "",
-    }
-}
+// interface IGameMatchSession {
+//     matchId: number
+//     gameId: string
+// }
 
-interface IGameMatchSession {
-    matchId: number
-    gameId: string
-}
-
-interface IGame {
-    id: string
-    name: string
-    imageUrl: string
-}
+// interface IGame {
+//     id: string
+//     name: string
+//     imageUrl: string
+// }
