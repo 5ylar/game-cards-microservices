@@ -1,30 +1,31 @@
-import uuid, random
+import uuid, random, redis.client
 from datetime import datetime
+from typing import List
+
+import rfc3339
+
+from exception import exception
 from . import cache
 from . import mq
 from . import matching_cards_model as model
 
 
-def create_match(user_id: str):
+def create_match(user_id: str) -> str:
 
     c = cache.get_cache()
 
-    match = model.Match(user_id)
+    match = model.Match(user_id=user_id)
 
     """ gen cards list """
-    cards = []
-    for i in range(12):
-        card_number = (i % 6) + 1
-        cards.append(model.MatchCard(card_number))
+    match.cards = [ model.Card(number=(i % 6) + 1) for i in range(0, 12) ]
 
     """ shuffle cards """
-    random.shuffle(cards)
+    random.shuffle(match.cards)
 
-    """ assign cards to each positions """
-    for i in range(12):
-        position = i + 1
-        match.card_states[position] = cards[i]
+    """ assign card positions """
+    for i in range(0, 12): match.cards[i].position = i + 1
 
+    """ generate match id """
     match_id = str(uuid.uuid4())
 
     """ remove previous match """
@@ -34,130 +35,121 @@ def create_match(user_id: str):
     except:
         pass
 
-    matchTTL = 60 * 60
+    """ expire in 60 minutes """
+    match_ttl = 60 * 60
 
-    """ save match, expire in 60 minutes"""
-    c.set(match_id, match.to_json(), matchTTL)
+    """ save match """
+    c.set(match_id, match.json(), match_ttl)
 
-    """ save current match id, expire in 60 minutes """
-    c.set("current_match__" + user_id, match_id, matchTTL)
+    """ save current match id """
+    c.set("current_match__" + user_id, match_id, match_ttl)
 
     return match_id
 
 
-def pick_card(match_id: int, position: int, user_id: str):
+def pick_card(match_id: str, position: int, user_id: str) -> int:
 
     c = cache.get_cache()
     
-    # prevent race condition
-    p = c.pipeline()
-    p.watch(match_id)
-    
+    """ prevent race condition """
+    p: redis.client.Pipeline = c.pipeline()
+    p.watch(match_id, "current_match__" + user_id)
 
-    match = model.Match.from_json(p.get(match_id))
+    match: model.Match = model.Match.parse_raw(p.get(match_id))
 
     if match is None:
-        raise Exception("No match found")
+        raise exception.err_not_found
 
     if match.user_id != user_id:
-        raise Exception("Permission denied")
+        raise exception.err_permission_denied
 
     if position < 1 or position > 12:
-        raise Exception("Invalid position value, allow only 1 - 12")
+        raise exception.err_invalid_position_value
 
     """ add click times """
     match.click_times += 1
-    
-    current_pickedup_card = match.card_states[str(position)]
-    
-    if current_pickedup_card.is_activated:
-        raise Exception("Cannot pick activated card")
 
-    if match.previous_pickedup_card_position is None:
-        match.previous_pickedup_card_position = position
+    """ current card """
+    current_pickup_card = match.cards[position - 1]
+    
+    if current_pickup_card.is_activated:
+        raise exception.err_cannot_pick_activated_card
+
+    if match.previous_pickup_card is None:
+        match.previous_pickup_card = current_pickup_card
     else:
         """ already pick 2 card in round """
 
-        p1 = match.previous_pickedup_card_position
-        p2 = position
+        p1 = match.previous_pickup_card.position
+        p2 = current_pickup_card.position
 
         if p1 == p2:
-            raise Exception("Cannot pick same card in a round")
+            raise exception.err_cannot_pick_same_card_in_round
 
-        card_1 = match.card_states[str(p1)]
-        card_2 = current_pickedup_card
+        card_1 = match.previous_pickup_card
+        card_2 = current_pickup_card
 
         """ matched card """
-        if card_1.card_number == card_2.card_number:
-            match.card_states[str(p1)].is_activated = True
-            match.card_states[str(p2)].is_activated = True
+        if card_1.number == card_2.number:
+            match.cards[p1 - 1].is_activated = True
+            match.cards[p2 - 1].is_activated = True
 
         """ clear pick card session """
-        match.previous_pickedup_card_position = None
-        
-    
-    """ if all cards are activated, publish message to queue """
-    if get_number_of_activated_cards(match.card_states) == 12:
-        b = model.MatchResult(
-                match_id=match_id,
-                user_id=user_id,
-                click_times=match.click_times,
-                end_time=datetime.now()
-        )
-        mq.get_mq().publish(key="match_result", body=b.json())
-        
-        p.unwatch()
-        c.delete(match_id)
-    
-    else:
-        p.multi()
-        p.set(match_id, match.to_json())
-        p.execute()
+        match.previous_pickup_card = None
 
-    return current_pickedup_card.card_number
+        """ if all cards are activated """
+        if len([card for card in match.cards if card.is_activated]) == 12:
+
+            """ publish match result to queue """
+            b = model.MatchResult(
+                    match_id=match_id,
+                    user_id=user_id,
+                    click_times=match.click_times,
+                    end_time=rfc3339.rfc3339(datetime.now().timestamp())
+            )
+            mq.get_mq().publish(key="match_result", body=b.json())
+
+            """ unwatch match data change """
+            p.unwatch()
+
+            """ delete current match of user """
+            c.delete("current_match__" + user_id)
+
+            """ delete match """
+            c.delete(match_id)
+
+            return current_pickup_card.number
+
+    p.multi()
+    """ update match """
+    p.set(match_id, match.json())
+    p.execute()
+
+    return current_pickup_card.number
     
     
-
-
-def get_current_match(user_id: str):
+def get_current_match(user_id: str) -> str:
     return cache.get_cache().get("current_match__" + user_id)
 
 
-def get_match_session_state(match_id: str, user_id: str):
+def get_match_session_state(match_id: str, user_id: str) -> model.MatchSessionState:
+
     """ find match """
-    j = cache.get_cache().get(match_id)
-    match = model.Match.from_json(j)
+    match = model.Match.parse_raw(
+        cache.get_cache().get(match_id)
+    )
 
     """ check permission """
     if match.user_id != user_id:
-        raise Exception("Permission denied")
+        raise exception.err_permission_denied
 
-    activated_cards = []
-    previous_pickedup_card = model.CardMappingPosition()
-
-    """ find activated cards and previous picked up card """
-    for position in match.card_states:
-        card = match.card_states[position]
-        if card.is_activated:
-            activated_cards.append(model.CardMappingPosition(int(position), card.card_number))
-
-        if int(position) == match.previous_pickedup_card_position:
-            previous_pickedup_card.position = int(position)
-            previous_pickedup_card.card_number = card.card_number
+    activated_cards = [card for card in match.cards if card.is_activated]
 
     session = model.MatchSessionState(
         match_id=match_id,
         click_times=match.click_times,
-        previous_pickedup_card=(previous_pickedup_card if previous_pickedup_card.position is not None and previous_pickedup_card.card_number is not None else None),
+        previous_pickup_card=match.previous_pickup_card,
         activated_cards=activated_cards
     )
 
     return session
-
-def get_number_of_activated_cards(card_states: dict):
-    count = []
-    for pos in card_states:
-        if card_states[pos].is_activated:
-            count.append(1)
-            
-    return len(count)

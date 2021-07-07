@@ -1,6 +1,11 @@
-from pydantic import BaseModel, Field
+from typing import List
+
+from pydantic import BaseModel
 
 class PickCard(BaseModel):
-    match_id: str = Field(..., alias='matchId')
+    match_id: str
     position: int
-    
+
+
+
+

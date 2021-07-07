@@ -15,8 +15,9 @@ def init():
     password = os.environ.get('RABBITMQ_PASSWORD', '')
     
     credentials = pika.PlainCredentials(user, password)
-    parameters = pika.ConnectionParameters(host, port,'/',credentials)
+    parameters = pika.ConnectionParameters(host, port,'/',credentials, heartbeat=0)
     connection = pika.BlockingConnection(parameters)
+    connection.consumer_cancel_notify
     mq.init(connection, ["match_result"])
 
 def close():

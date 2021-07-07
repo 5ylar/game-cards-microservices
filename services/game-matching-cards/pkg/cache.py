@@ -1,14 +1,17 @@
 import redis
 
+import exception.exception
+
+
 class Cache:
     def init(self, r = redis.Redis(host='localhost', port=6379, db=0)):
         self.r = r
-    
+
     def get(self, key):
         val = self.r.get(key)
         
         if val is None:
-            raise Exception("Not found")
+            raise exception.exception.err_not_found
             
         return val.decode()
     
@@ -17,7 +20,9 @@ class Cache:
 
     def delete(self, key):
         self.r.delete(key)
-        
-        
-    def pipeline(self):
+
+    def pipeline(self) -> redis.client.Pipeline:
         return self.r.pipeline()
+
+    def ping(self):
+        return self.r.ping()

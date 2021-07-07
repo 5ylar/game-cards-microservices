@@ -114,6 +114,14 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 hiredis = ["hiredis (>=0.1.3)"]
 
 [[package]]
+name = "rfc3339"
+version = "6.2"
+description = "Format dates according to the RFC 3339."
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "starlette"
 version = "0.14.2"
 description = "The little ASGI library that shines."
@@ -159,7 +167,7 @@ standard = ["websockets (>=9.1)", "httptools (>=0.2.0,<0.3.0)", "watchgod (>=0.6
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "af1c0364011c78b389a1a1f7916d8b634538bdb9875dfac4f3e4a3c4fbf107d5"
+content-hash = "630775bcae739eac211f2dc727ee0b561e9f865218ad15149c95398ef163aece"
 
 [metadata.files]
 asgiref = [
@@ -221,6 +229,10 @@ pydantic = [
 redis = [
     {file = "redis-3.5.3-py2.py3-none-any.whl", hash = "sha256:432b788c4530cfe16d8d943a09d40ca6c16149727e4afe8c2c9d5580c59d9f24"},
     {file = "redis-3.5.3.tar.gz", hash = "sha256:0e7e0cfca8660dea8b7d5cd8c4f6c5e29e11f31158c0b0ae91a397f00e5a05a2"},
+]
+rfc3339 = [
+    {file = "rfc3339-6.2-py3-none-any.whl", hash = "sha256:f44316b21b21db90a625cde04ebb0d46268f153e6093021fa5893e92a96f58a3"},
+    {file = "rfc3339-6.2.tar.gz", hash = "sha256:d53c3b5eefaef892b7240ba2a91fef012e86faa4d0a0ca782359c490e00ad4d0"},
 ]
 starlette = [
     {file = "starlette-0.14.2-py3-none-any.whl", hash = "sha256:3c8e48e52736b3161e34c9f0e8153b4f32ec5d8995a3ee1d59410d92f75162ed"},
