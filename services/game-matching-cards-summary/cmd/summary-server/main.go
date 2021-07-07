@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	summaryCache "game-matching-cards/internal/summary-cache"
+	summaryServer "game-matching-cards-result/api/summary-server"
+	matchResult "game-matching-cards-result/internal/match-result"
 	"os"
 
 	"gorm.io/driver/postgres"
@@ -16,8 +17,8 @@ func main() {
 		dbPass     = os.Getenv("DB_PASSWORD")
 		dbName     = os.Getenv("DB_NAME")
 		dbPort     = os.Getenv("DB_PORT")
-		dbSSLMode  = os.Getenv("SSL_MODE")
-		dbTimeZone = os.Getenv("TIMEZONE")
+		dbSSLMode  = os.Getenv("DB_SSL_MODE")
+		dbTimeZone = os.Getenv("DB_TIMEZONE")
 	)
 
 	// database
@@ -31,5 +32,9 @@ func main() {
 	}
 
 	// summary cache module
-	sc := summaryCache.New(db)
+	mr := matchResult.New(db)
+
+	// api server
+	server := summaryServer.New(mr)
+	server.Start()
 }

@@ -1,12 +1,11 @@
-package result_consumer
+package main
 
 import (
 	"fmt"
-	matchResult "game-matching-cards/internal/match-result"
-	resultConsumer "game-matching-cards/mq/result-consumer"
+	matchResult "game-matching-cards-result/internal/match-result"
+	resultConsumer "game-matching-cards-result/mq/result-consumer"
 	"os"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/streadway/amqp"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -20,17 +19,13 @@ func main() {
 		dbPass     = os.Getenv("DB_PASSWORD")
 		dbName     = os.Getenv("DB_NAME")
 		dbPort     = os.Getenv("DB_PORT")
-		dbSSLMode  = os.Getenv("SSL_MODE")
-		dbTimeZone = os.Getenv("TIMEZONE")
+		dbSSLMode  = os.Getenv("DB_SSL_MODE")
+		dbTimeZone = os.Getenv("DB_TIMEZONE")
 
 		rabbitmqHost = os.Getenv("RABBITMQ_HOST")
-		rabbitmqUser = os.Getenv("RABBITMQ_User")
+		rabbitmqUser = os.Getenv("RABBITMQ_USER")
 		rabbitmqPass = os.Getenv("RABBITMQ_PASSWORD")
-		rabbitmqPort = os.Getenv("RABBITMQ_PORt")
-
-		redisHost = os.Getenv("REDIS_HOST")
-		redisPass = os.Getenv("REDIS_PASSWORD")
-		redisPort = os.Getenv("REDIS_PORT")
+		rabbitmqPort = os.Getenv("RABBITMQ_PORT")
 	)
 
 	// database
@@ -44,7 +39,7 @@ func main() {
 	}
 
 	// rabbitmq
-	conn, err := amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:%s/", rabbitmqHost, rabbitmqUser, rabbitmqPass, rabbitmqPort))
+	conn, err := amqp.Dial(fmt.Sprintf("amqp://%s:%s@%s:%s/", rabbitmqUser, rabbitmqPass, rabbitmqHost, rabbitmqPort))
 	if err != nil {
 		panic(err)
 	}
@@ -56,33 +51,12 @@ func main() {
 	}
 	defer ch.Close()
 
-	q, err := ch.QueueDeclare(
-		"hello", // name
-		false,   // durable
-		false,   // delete when unused
-		false,   // exclusive
-		false,   // no-wait
-		nil,     // arguments
-	)
-	if err != nil {
-		panic(err)
-	}
-
-	// rabbitmq self-healing
-
-	// redis
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", redisHost, redisPort),
-		Password: redisPass, // no password set
-		DB:       0,         // use default DB
-	})
-
 	// match result module
-	mr := matchResult.New(db, redisClient)
+	mr := matchResult.New(db)
 
 	// result consumer
 	rc := resultConsumer.New(ch, mr)
-	if err := rc.Listen(q); err != nil {
+	if err := rc.Listen(); err != nil {
 		panic(err)
 	}
 }
