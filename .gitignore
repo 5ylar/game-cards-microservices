@@ -1,1 +1,5 @@
-.vscode
+.vscode/
+.idea/
+.env
+docker-volumes/
+.DS_Store
