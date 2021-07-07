@@ -23,8 +23,7 @@ services:
   postgres:
     image: postgres:13.3
     healthcheck:
-      test: /usr/bin/pg_isready
-      # test: [ "CMD", "pg_isready", "-q", "-d", "gamecards", "-U", "gamecards" ]
+      test: [ "CMD", "pg_isready", "-q", "-d", "game_cards", "-U", "gamecards" ]
       timeout: 5s
       interval: 6s
       retries: 5
