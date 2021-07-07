@@ -41,9 +41,6 @@ function GameMatchingCardsMatch(props: IProps) {
 export const getServerSideProps: GetServerSideProps = async ({ query, req: { cookies } }: GetServerSidePropsContext) => {
     const { matchId } = query
 
-    console.log('matchId',matchId)
-    console.log('cookies',cookies)
-
     // set user id on server side
     NSGameMatchingCards.setUserId(cookies?.userId)
 

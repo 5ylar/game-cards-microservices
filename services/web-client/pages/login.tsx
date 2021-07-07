@@ -11,7 +11,7 @@ export default function Login() {
     const { register, handleSubmit, formState: { errors } } = useForm()
 
     const onLogin = (form: ILoginForm) => {
-        cookie.set("userId", form.username)
+        cookie.set("userId", form.username, { path: '/' })
         router.push("/")
     }
 
