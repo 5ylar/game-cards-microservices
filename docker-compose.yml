@@ -7,7 +7,7 @@ services:
       timeout: 30s
       interval: 10s
       retries: 5
-    restart: unless-stopped
+    restart: always
     expose: 
     - 5672
     # ports:
@@ -28,7 +28,7 @@ services:
       timeout: 5s
       interval: 6s
       retries: 5
-    restart: unless-stopped
+    restart: always
     environment:
       POSTGRES_USER: gamecards
       POSTGRES_PASSWORD: mygamecardspassword
@@ -48,7 +48,7 @@ services:
       timeout: 30s
       interval: 10s
       retries: 5
-    restart: unless-stopped
+    restart: always
     environment:
       REDIS_PASSWORD: mygamecardspassword
     expose: 
@@ -81,7 +81,7 @@ services:
       context: services/game-matching-cards-summary
       args:
         CMD_DIR: result-consumer
-    restart: unless-stopped
+    restart: always
     environment:
       DB_HOST: postgres
       DB_USER: gamecards
@@ -108,7 +108,7 @@ services:
     #   timeout: 30s
     #   interval: 10s
     #   retries: 5
-    restart: unless-stopped
+    restart: always
     # ports:
     #   - 8081:80
     expose: 
@@ -134,7 +134,7 @@ services:
       timeout: 30s
       interval: 10s
       retries: 5
-    restart: unless-stopped
+    restart: always
     # ports:
     #   - 8080:80
     expose: 
@@ -172,7 +172,7 @@ services:
       timeout: 30s
       interval: 10s
       retries: 5
-    restart: unless-stopped
+    restart: always
     ports:
       - 3001:3000
 
