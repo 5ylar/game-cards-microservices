@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
 type SummaryServer struct {
@@ -19,6 +20,12 @@ func New(mr *matchResult.MatchResult) *SummaryServer {
 
 func (s *SummaryServer) Start() {
 	f := fiber.New()
+
+	f.Use(cors.New(cors.Config{
+		AllowOrigins: "*",
+		AllowMethods: "*",
+		AllowHeaders: "*",
+	}))
 
 	f.Get("/min-click-times", MiddlewareAuth, s.getMinClickTimesSummary)
 	f.Get("/ranks", s.getUserRanks)
