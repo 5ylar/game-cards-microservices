@@ -153,6 +153,12 @@ services:
     - game_cards_server
     - summary_server
     image: nginx:1.13
+    healthcheck:
+      test: service nginx status || exit 1
+      timeout: 30s
+      interval: 10s
+      retries: 10
+    restart: always
     ports:
       - 9000:80
     volumes:
