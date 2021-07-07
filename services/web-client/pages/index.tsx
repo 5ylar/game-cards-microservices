@@ -1,8 +1,9 @@
 import { PlayIcon } from '@heroicons/react/solid'
 import { useCookie } from 'next-cookie'
 import { useRouter } from 'next/router'
+import { withAuth } from '../middlewares/auth'
 
-export default function Home() {
+function Home() {
 
   const router = useRouter()
   const cookie = useCookie()
@@ -27,3 +28,5 @@ export default function Home() {
     </div>
   )
 }
+
+export default withAuth(Home)

@@ -2,40 +2,31 @@ import { GetServerSideProps, GetServerSidePropsContext } from "next"
 import { useRouter } from "next/router"
 import { useEffect, useState } from "react"
 import GameMatchingCardsDashboard from "../../../coomponents/game-matching-cards-dashboard"
+import { withAuth } from "../../../middlewares/auth"
 import { NSGameMatchingCards } from "../../../ns"
 
-export default function Game(props: IProps) {
+function Game(props: IProps) {
     const router = useRouter()
 
-    const [mySummaryStat, setMySummaryStat] = useState<NSGameMatchingCards.ISummaryStat>({
-        playingTimes: 0,
-        avgClickTimes: 0,
-        minClickTimes: 0,
-        maxClickTimes: 0,
-    })
-    const [globalSummaryStat, setGlobalSummaryStat] = useState<NSGameMatchingCards.IGlobalSummaryStat>({
-        playingTimes: 0,
-        avgClickTimes: 0,
-        minClickTimes: 0,
-        maxClickTimes: 0,
-        players: 0,
+    const [minStat, setMinStat] = useState<NSGameMatchingCards.IMinStat>({
+        globalMinClickTimes: 0,
+        myMinClickTimes: 0,
     })
     const [top10UserRanks, setTop10UserRanks] = useState<NSGameMatchingCards.IUserRank[]>([])
 
 
     useEffect(() => {
-        NSGameMatchingCards.getMySummaryStat().then(r => setMySummaryStat(r))
-        NSGameMatchingCards.getGlobalSummaryStat().then(r => setGlobalSummaryStat(r))
+        NSGameMatchingCards.getMinStat().then(r => setMinStat(r))
         NSGameMatchingCards.getTop10UserRanks().then(r => setTop10UserRanks(r))
     }, [])
 
     const haveSession = (): boolean => {
-        return !!props.matchSession?.matchId
+        return !!props.current_match_id
     }
 
     const onPlay = async () => {
         if (haveSession()) {
-            router.push(`/games/matching-cards/matches/${props.matchSession?.matchId}`)
+            router.push(`/games/matching-cards/matches/${props.current_match_id}`)
             return
         }
 
@@ -60,8 +51,7 @@ export default function Game(props: IProps) {
                 <div className="w-full md:w-7/12 mx-auto mt-4">
                     <GameMatchingCardsDashboard
                         top10UserRanks={top10UserRanks}
-                        mySummaryState={mySummaryStat}
-                        globalSummaryStat={globalSummaryStat}
+                        minStat={minStat}
                     />
                 </div>
             </div>
@@ -69,18 +59,28 @@ export default function Game(props: IProps) {
     )
 }
 
-export const getServerSideProps: GetServerSideProps = async ({ query }: GetServerSidePropsContext) => {
-    const matchSession = {
-        matchId: null
-    }
+export const getServerSideProps: GetServerSideProps = async ({ query, req: { cookies } }: GetServerSidePropsContext) => {
+    try {
 
-    return {
-        props: {
-            matchSession
+        // set user id on server side
+        NSGameMatchingCards.setUserId(cookies?.userId)
+
+        const currentMatch = await NSGameMatchingCards.getCurrentMatch()
+
+        return {
+            props: {
+                current_match_id: currentMatch.matchId
+            }
+        }
+    } catch (error) {
+        return {
+            props: {}
         }
     }
 }
 
 interface IProps {
-    matchSession?: NSGameMatchingCards.IMatchSession
+    current_match_id?: string
 }
+
+export default withAuth(Game)

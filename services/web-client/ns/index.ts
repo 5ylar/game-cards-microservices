@@ -1,106 +1,127 @@
-
+import axios, { AxiosInstance } from "axios"
 export namespace NSGameMatchingCards {
 
-    export const GAME_ID = 'MATCHING_CARDS'
+    const isServer = typeof window == 'undefined'
+
+    let axiosInstance: AxiosInstance = axios.create({ 
+        baseURL: isServer ? process.env.BASE_GAME_MATCHING_CARDS_URL_SSR : process.env.BASE_GAME_MATCHING_CARDS_URL
+    })
+
+
+    export const setUserId = (userId?: string) => {
+        if (userId) {
+            axiosInstance.defaults.headers["User-ID"] = userId
+            return
+        }
+
+        delete axiosInstance.defaults.headers["User-ID"]
+    }
 
     export const createMatch = async (): Promise<IMatch> => {
-        return {
-            matchId: 2,
-            gameId: ""
+        try {
+            const response = await axiosInstance.post("/")
+            return {
+                matchId: response.data.match_id
+            }
+
+        } catch (error) {
+            throw Error("Create match error")
         }
     }
-    
-    export const getMatchSessionState = async (matchId: number): Promise<IGameMatchingCardsSessionState> => {
-        return {
-            matchId: 1,
-            clickedTimes: 1,
-            clickedCardsInRound: [{ position: 1, cardNumber: 1 }],
-            matchedCards: [{ position: 2, cardNumber: 2 }, { position: 3, cardNumber: 2 }],
+
+    export const getMatchSessionState = async (matchId: string): Promise<IGameMatchingCardsSessionState> => {
+
+        try {
+            const response = await axiosInstance.get("/" + matchId)
+            let matchSession: IGameMatchingCardsSessionState = {
+                matchId: response.data.match_id,
+                clickTimes: response.data.click_times,
+                previousPickupCard: <ICard>response.data.previous_pickup_card,
+                activatedCards: <ICard[]>response.data.activated_cards,
+            }
+
+            return matchSession
+
+        } catch (error) {
+            throw Error("get match session error")
         }
     }
-    
-    export const clickCard = async (position: number): Promise<IClickCardResult> => {
-    
-        return {
-            cardNumber: Math.round(6),
+
+    export const clickCard = async (matchId: string, position: number): Promise<IClickCardResult> => {
+        try {
+            const response = await axiosInstance.post("/pick-card", { match_id: matchId, position, })
+            return {
+                cardNumber: response.data.card_number
+            }
+
+        } catch (error) {
+            throw Error("pick card error")
         }
     }
-    
-    export const getGlobalSummaryStat = async (): Promise<IGlobalSummaryStat> => {
-        return {
-            minClickTimes: 1,
-            maxClickTimes: 1,
-            avgClickTimes: 1,
-            players: 1,
-            playingTimes: 1,
-        }
-    }
-    
-    export const getMySummaryStat = async (): Promise<ISummaryStat> => {
-        return {
-            minClickTimes: 1,
-            maxClickTimes: 1,
-            avgClickTimes: 1,
-            playingTimes: 1,
+
+    export const getCurrentMatch = async (): Promise<ICurrentMatch> => {
+        try {
+            const response = await axiosInstance.get("/current-match")
+            return {
+                matchId: response.data.match_id
+            }
+
+        } catch (error) {
+            throw Error("pick card error")
         }
     }
 
     export const getMinStat = async (): Promise<IMinStat> => {
-        return {
-            myMinClickTimes: 1,
-            globalMinClickTimes: 1,
-        }
-    }
-    
-    export const getMyMatchSession = async (): Promise<IMatchSession> => {
-        return {
-            matchId: 2,
+        try {
+            const response = await axiosInstance.get("/summary/min-click-times")
+            return {
+                globalMinClickTimes: response.data?.global_min_click_times || 0,
+                myMinClickTimes: response.data?.user_min_click_times || 0,
+            }
+
+        } catch (error) {
+            throw Error("get min stat error")
         }
     }
 
     export const getTop10UserRanks = async (): Promise<IUserRank[]> => {
-        return []
+        try {
+            const response = await axiosInstance.get("/summary/ranks")
+            const ranks: IUserRank[] = []
+
+            response.data?.map?.((d: any) => ranks.push({ userId: d.user_id || '-', minClickTimes: d.min_click_times || 0 }))
+            return ranks
+
+        } catch (error) {
+            throw Error("get top 10 user ranks error")
+        }
     }
 
 
     export interface IMatch {
         matchId: number
-        gameId: string
     }
 
-    export interface IMatchSession {
+    export interface ICurrentMatch {
         matchId: number
     }
-    
-    
     export interface IClickCardResult {
         cardNumber: number
-        isMatched?: boolean | null
+        // isMatched?: boolean | null
     }
 
-    export interface ICardNumberPosition {
-        position: number;
-        cardNumber: number
+    export interface ICard {
+        position: number
+        number: number
+        isActivated?: boolean
     }
-    
+
     export interface IGameMatchingCardsSessionState {
-        matchId: number
-        clickedTimes: number
-        clickedCardsInRound: ICardNumberPosition[]
-        matchedCards: ICardNumberPosition[]
+        matchId: string
+        clickTimes: number
+        previousPickupCard: ICard
+        activatedCards: ICard[]
     }
-    
-    export interface ISummaryStat {
-        playingTimes: number
-        avgClickTimes: number
-        minClickTimes: number
-        maxClickTimes: number
-    }
-    
-    export interface IGlobalSummaryStat extends ISummaryStat {
-        players: number
-    }
-
     export interface IMinStat {
         myMinClickTimes: number
         globalMinClickTimes: number

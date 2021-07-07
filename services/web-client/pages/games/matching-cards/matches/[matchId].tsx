@@ -1,20 +1,15 @@
+import axios from "axios"
 import { GetServerSideProps, GetServerSidePropsContext, NextPageContext } from "next"
 import { useRouter } from "next/router"
 import { useEffect, useState } from "react"
 import GameMatchingCards from "../../../../coomponents/game-matching-cards"
+import { withAuth } from "../../../../middlewares/auth"
 import { NSGameMatchingCards } from "../../../../ns"
 
-export default function GameMatchingCardsMatch(props: IProps) {
+function GameMatchingCardsMatch(props: IProps) {
     const router = useRouter()
 
     const [minStat, setMinStat] = useState<NSGameMatchingCards.IMinStat>({ myMinClickTimes: 0, globalMinClickTimes: 0 })
-
-    // const onClickCard = async (position: number): Promise<NGameMatchingCards.IClickCardResult> => {
-    //     const result = await NGameMatchingCards.createMatch()
-    //     return {
-    //         cardNumber: 1
-    //     }
-    // }
 
     const onCreateNewMatch = async () => {
         router.replace('/games/matching-cards/matches/new')
@@ -25,17 +20,17 @@ export default function GameMatchingCardsMatch(props: IProps) {
     }
 
     useEffect(() => {
-        NSGameMatchingCards.getMinStat().then(r => setMinStat(r) )
+        NSGameMatchingCards.getMinStat().then(r => setMinStat(r))
     }, [])
 
     return (
         <GameMatchingCards
-            matchId={Number(router.query.matchId)}
+            matchId={String(router.query.matchId)}
             myMinClickTimes={minStat.myMinClickTimes}
             globalMinClickTimes={minStat.globalMinClickTimes}
-            clickedTimes={props.matchSessionState?.clickedTimes}
-            clickedCardsInRound={props.matchSessionState?.clickedCardsInRound}
-            matchedCards={props.matchSessionState?.matchedCards}
+            clickedTimes={props.matchSessionState?.clickTimes}
+            clickedCardsInRound={props.matchSessionState?.previousPickupCard ? [props.matchSessionState.previousPickupCard] : []}
+            matchedCards={props.matchSessionState?.activatedCards}
             onClickCard={NSGameMatchingCards.clickCard}
             onCreateNewMatch={onCreateNewMatch}
             onBack={onBack}
@@ -43,14 +38,28 @@ export default function GameMatchingCardsMatch(props: IProps) {
     )
 }
 
-export const getServerSideProps: GetServerSideProps = async ({ query }: GetServerSidePropsContext) => {
+export const getServerSideProps: GetServerSideProps = async ({ query, req: { cookies } }: GetServerSidePropsContext) => {
     const { matchId } = query
 
-    const matchSessionState = await NSGameMatchingCards.getMatchSessionState(Number(matchId))
+    console.log('matchId',matchId)
+    console.log('cookies',cookies)
 
-    return {
-        props: {
-            matchSessionState
+    // set user id on server side
+    NSGameMatchingCards.setUserId(cookies?.userId)
+
+    try {
+        const matchSessionState = await NSGameMatchingCards.getMatchSessionState(String(matchId))
+        return {
+            props: {
+                matchSessionState
+            },
+        }
+    } catch (error) {
+        return {
+            redirect: {
+                permanent: false,
+                destination: '/'
+            }
         }
     }
 }
@@ -58,3 +67,5 @@ export const getServerSideProps: GetServerSideProps = async ({ query }: GetServe
 interface IProps {
     matchSessionState?: NSGameMatchingCards.IGameMatchingCardsSessionState
 }
+
+export default withAuth(GameMatchingCardsMatch)

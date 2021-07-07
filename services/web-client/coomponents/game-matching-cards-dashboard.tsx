@@ -6,11 +6,11 @@ export default function GameMatchingCardsDashboard(props: IProps) {
             <div className="grid md:grid-cols-2 gap-2 mb-2">
                 <div className="bg-gray-100 p-4 rounded">
                     <h2 className="font-bold mb-2 text-center text-2xl">My Best</h2>
-                    <p className="text-center text-2xl">{props.mySummaryState.minClickTimes}</p>
+                    <p className="text-center text-2xl">{props.minStat.myMinClickTimes}</p>
                 </div>
                 <div className="bg-gray-100 p-4 rounded">
                     <h2 className="font-bold mb-2 text-center text-2xl">Global Best</h2>
-                    <p className="text-center text-2xl">{props.globalSummaryStat.minClickTimes}</p>
+                    <p className="text-center text-2xl">{props.minStat.globalMinClickTimes}</p>
                 </div>
             </div>
             {
@@ -45,6 +45,5 @@ export default function GameMatchingCardsDashboard(props: IProps) {
 
 interface IProps {
     top10UserRanks: NSGameMatchingCards.IUserRank[]
-    mySummaryState: NSGameMatchingCards.ISummaryStat
-    globalSummaryStat: NSGameMatchingCards.IGlobalSummaryStat
+    minStat: NSGameMatchingCards.IMinStat
 }

@@ -1,8 +1,9 @@
 import { useRouter } from "next/router";
 import { useEffect } from "react";
+import { withAuth } from "../../../../middlewares/auth";
 import { NSGameMatchingCards } from "../../../../ns";
 
-export default function NewGameMatchingCardsMatch() {
+function NewGameMatchingCardsMatch() {
     const router = useRouter()
 
     useEffect(() => {
@@ -13,3 +14,5 @@ export default function NewGameMatchingCardsMatch() {
 
     return <div />
 }
+
+export default withAuth(NewGameMatchingCardsMatch)
